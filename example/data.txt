@@ -1,0 +1,40 @@
+# Define endpoints in a text file.
+
+# Comments need to start on a new line with a # sign.
+
+# Blank lines are ignored, it's better to have some of those for formatting
+
+# An endpoint definition begins with a line containing nothing but a URL, but only path and query params will be used
+# This allows us to copy any URL from the Network tab of browser's dev tool.
+https://domain-is-not-used.com:8080/api/v1/whoami
+# Response is kind of free format, it will be responded with 'application/json' type if it's a valid JSON, otherwise it'll be 'text/plain'.
+{"name":"Rong","isThatAll": true}
+
+# Let's have another endpoint
+https://alreayd-know-domain-is-ignored.com/api/v1/visitor
+# We can define this endpoint to be of POST method, or other HTTP method
+POST
+# it could return something other than success (200)
+400
+# with a text response
+Sorry, we are closed.
+
+# Since only path and query params are checked, we can start an endpoint with just that
+/api/v1/reservation/1
+PUT
+# We can simulate a little delay, maybe we want to see that fancy spinner in browser
+200ms-1000ms
+{ "reservationNo": 1, "date": "yesterday", "message": "Thank you for booking, your reservation just expired :(" }
+
+
+# Response could be something else, like a file. Once again, content-type will be determined base on file content like before
+https://not-so-good-hotel.com/api/v1/_inside
+# files are resolved relative to this data.txt file
+file:../package.json
+
+# At last, why not have an endpoint for this file
+https://not-so-bad-hotel.com/api/v1/_data.txt
+
+# Almost forgot to mention, all lines are trimmed,
+  # so leading/trailing whitespaces are not included in response, unless it's from a file
+    file:data.txt
