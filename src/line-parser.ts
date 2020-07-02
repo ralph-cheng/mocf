@@ -18,42 +18,38 @@ type Parsers = {
   [k in keyof Required<IEndpoint>]: (line: string) => IEndpoint[k];
 };
 
-function genFileResponseFn(line: string, filename: string): ReturnType<Parsers['responseFn']> {
+function respondContent(lines: string[]) {
+  const text = lines.join('\n');
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return text;
+  }
+}
+
+function respondFile(line: string, filename: string) {
   const matched = /^\s*file:\s*(.*)$/.exec(line);
   if (!matched) {
     return null;
   }
   const [, responseFilename] = matched;
   const resolvedFilename = Path.resolve(Path.dirname(filename), responseFilename);
-  const fallbackResponseFn = genInlineResponseFn(line);
 
-  return async () => {
-    try {
-      if (!Fs.lstatSync(resolvedFilename).isFile()) {
-        return fallbackResponseFn();
-      } else {
-        const content = Fs.readFileSync(resolvedFilename).toString();
-        const value = await genInlineResponseFn(content)();
-        return value;
-      }
-    } catch (e) {
-      return fallbackResponseFn();
-    }
-  };
-}
-
-function genInlineResponseFn(line: string): ReturnType<Parsers['responseFn']> {
-  let content: any;
   try {
-    content = JSON.parse(line);
+    if (!Fs.lstatSync(resolvedFilename).isFile()) {
+      return null;
+    } else {
+      const content = Fs.readFileSync(resolvedFilename).toString();
+      return respondContent([content]);
+    }
   } catch (e) {
-    // ignore error, use the line as text
-    content = line;
+    return null;
   }
-  return async () => content;
 }
 
 function getLineParsers(filename: string): Parsers {
+  const responseLines: string[] = [];
+
   return {
     path(line) {
       return URL.parse(line).path;
@@ -65,7 +61,17 @@ function getLineParsers(filename: string): Parsers {
       return parseInt(line);
     },
     responseFn(line) {
-      return genFileResponseFn(line, filename) || genInlineResponseFn(line);
+      responseLines.push(line);
+      return async () => {
+        switch (responseLines.length) {
+          case 0:
+            return null;
+          case 1:
+            return respondFile(responseLines[0], filename) || respondContent(responseLines);
+          default:
+            return respondContent(responseLines);
+        }
+      };
     },
     delayFn(line) {
       const [, ms1, , ms2 = '0'] = /^(\d+)(ms)?-?(\d+)?ms$/.exec(line);
@@ -111,20 +117,33 @@ function guessLineType(line: string): LineType {
 }
 
 export function getParserForFile(filename: string) {
-  const parsers = getLineParsers(filename);
+  let parsers: Parsers = getLineParsers(filename);
   return (line: string, endpoint: IEndpoint): IEndpoint => {
     line = line.trim();
     const lineType = guessLineType(line);
     switch (lineType) {
       case LineType.Url:
+        parsers = getLineParsers(filename);
         return { path: parsers.path(line) };
       case LineType.Status:
+        if (endpoint.responseFn) {
+          endpoint.responseFn = parsers.responseFn(line);
+          return endpoint;
+        }
         endpoint.status = parsers.status(line);
         return endpoint;
       case LineType.Method:
+        if (endpoint.responseFn) {
+          endpoint.responseFn = parsers.responseFn(line);
+          return endpoint;
+        }
         endpoint.method = parsers.method(line);
         return endpoint;
       case LineType.Delay:
+        if (endpoint.responseFn) {
+          endpoint.responseFn = parsers.responseFn(line);
+          return endpoint;
+        }
         endpoint.delayFn = parsers.delayFn(line);
         return endpoint;
       case LineType.Response:

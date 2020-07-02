@@ -69,7 +69,7 @@ export function createResolver(): IResolver {
       text.push('');
     }
     const nFiles = files.length;
-    text.unshift(`Found ${endpointCount} in ${plural(nFiles, 'file')}...`);
+    text.unshift(`Found ${plural(endpointCount, 'endpoint')} in ${plural(nFiles, 'file')}...`);
     text.push('');
     return text.join('\n');
   };
