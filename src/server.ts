@@ -1,41 +1,55 @@
+import connect from 'connect';
+import { NextFunction } from 'express';
+import { IncomingMessage, ServerResponse } from 'http';
 import morgan from 'morgan';
-import express from 'express';
-import { IResolver } from './resolver';
+import { IConfigOptions } from './config-options';
+import { createResolver } from './resolver';
 
-export function startup(resolver: IResolver, hostname: string, port: number) {
-  const app = express();
+export async function startup(options: IConfigOptions) {
+  const { hostname, port, dataFiles } = options;
+  const resolver = createResolver();
+  for (const filename of dataFiles) {
+    await resolver.addFile(filename);
+  }
+  const app = connect();
 
   app.use(morgan('dev'));
 
-  app.use(async (req, res) => {
+  app.use((req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const cfg = resolver.resolveReq(req);
     if (!cfg) {
-      res.status(404).end();
+      next();
       return;
     }
-    const { delayFn, status, responseFn } = cfg;
+
+    const { delayFn, status = 200, responseFn } = cfg;
 
     function respond() {
       responseFn().then(
         (value) => {
-          res
-            .type(typeof value === 'string' ? 'text/plain' : 'application/json')
-            .status(status || 200)
-            .send(value);
+          const isText = typeof value === 'string';
+          const type = isText ? 'text/plain' : 'application/json';
+          const body = isText ? value : JSON.stringify(value);
+          res.writeHead(status, {
+            'Content-Type': type,
+            'Content-Length': Buffer.byteLength(body),
+          });
+          res.end(body);
+          next();
         },
         (err) => console.error(`Error getting responsed for '${req.url}': `, err)
       );
     }
 
     if (delayFn) {
-      await delayFn();
+      delayFn().then(respond);
+    } else {
+      respond();
     }
-    respond();
   });
 
   return app.listen(port, hostname, () => {
-    console.log(`Server is running at http://${hostname}:${port}`);
-    console.log();
+    console.log(`Server is running at http://${hostname}:${port}\n`);
     console.log(resolver.info());
   });
 }

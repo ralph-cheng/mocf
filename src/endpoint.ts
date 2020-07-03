@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { IncomingMessage } from 'http';
 
 export interface IEndpoint {
   path: string;
@@ -13,7 +13,7 @@ export function calcEndpointKey(endpoint: IEndpoint) {
   return `${method} ${path}`;
 }
 
-export function calcRequestKey(request: Request) {
+export function calcRequestKey(request: IncomingMessage) {
   const { method, url } = request;
   return `${method.toUpperCase()} ${url}`;
 }

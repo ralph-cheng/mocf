@@ -1,7 +1,7 @@
 import * as Fs from 'fs';
+import { METHODS, STATUS_CODES } from 'http';
 import * as Path from 'path';
 import * as URL from 'url';
-import { HTTP_METHOD, HTTP_STATUS } from './constants';
 import { IEndpoint } from './endpoint';
 
 enum LineType {
@@ -99,11 +99,11 @@ function guessLineType(line: string): LineType {
     return LineType.Delay;
   }
 
-  if (HTTP_METHOD.includes(line.toUpperCase())) {
+  if (METHODS.includes(line.toUpperCase())) {
     return LineType.Method;
   }
 
-  if (HTTP_STATUS.includes(line)) {
+  if (line.trim() in STATUS_CODES) {
     return LineType.Status;
   }
 

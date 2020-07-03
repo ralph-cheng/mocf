@@ -1,6 +1,6 @@
 import chokidar from 'chokidar';
-import { Request } from 'express';
 import * as Fs from 'fs';
+import { IncomingMessage } from 'http';
 import * as Readline from 'readline';
 import { calcEndpointKey, calcRequestKey, IEndpoint } from './endpoint';
 import { getParserForFile } from './line-parser';
@@ -34,7 +34,7 @@ function fromTextFile(filename: string, cache: Record<string, IEndpoint>) {
 
 export interface IResolver {
   addFile(filename: string): Promise<void>;
-  resolveReq(req: Request): IEndpoint;
+  resolveReq(req: IncomingMessage): IEndpoint;
   info(): string;
 }
 
