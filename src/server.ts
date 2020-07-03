@@ -4,9 +4,10 @@ import { IncomingMessage, ServerResponse } from 'http';
 import morgan from 'morgan';
 import { IConfigOptions } from './config-options';
 import { createResolver } from './resolver';
+import { getProxyHandler } from './proxy';
 
 export async function startup(options: IConfigOptions) {
-  const { hostname, port, dataFiles } = options;
+  const { hostname, port, dataFiles, proxy, proxypath } = options;
   const resolver = createResolver();
   for (const filename of dataFiles) {
     await resolver.addFile(filename);
@@ -47,6 +48,8 @@ export async function startup(options: IConfigOptions) {
       respond();
     }
   });
+
+  app.use(getProxyHandler(proxy, proxypath || []))
 
   return app.listen(port, hostname, () => {
     console.log(`Server is running at http://${hostname}:${port}\n`);
