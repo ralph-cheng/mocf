@@ -1,0 +1,4 @@
+## example/separate-file-for-response.txt
+
+/api/v1/very_large
+file:../package-lock.json

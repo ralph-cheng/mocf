@@ -39,6 +39,8 @@ file:../package.json
 # If response spans multiple lines, lines of special features like, request method, response status code, or delay, will no longer be treated specially, they become part of the response.
 /api/v1/nothing_special
 The first non-special line starts a response. Every, almost, line after this are part of the response.
+
+
 401 # will no longer be treated as response status
 POST # neither the method
 

@@ -2,9 +2,14 @@ import connect from 'connect';
 import { NextFunction } from 'express';
 import { IncomingMessage, ServerResponse } from 'http';
 import morgan from 'morgan';
+import * as os from 'os';
 import { IConfigOptions } from './config-options';
-import { createResolver } from './resolver';
 import { getProxyHandler } from './proxy';
+import { createResolver } from './resolver';
+
+async function emptyResponse(): Promise<''> {
+  return '';
+}
 
 export async function startup(options: IConfigOptions) {
   const { hostname, port, dataFiles, proxy, proxypath } = options;
@@ -23,7 +28,7 @@ export async function startup(options: IConfigOptions) {
       return;
     }
 
-    const { delayFn, status = 200, responseFn } = cfg;
+    const { delayFn, status = 200, responseFn = emptyResponse } = cfg;
 
     function respond() {
       responseFn().then(
@@ -49,10 +54,26 @@ export async function startup(options: IConfigOptions) {
     }
   });
 
-  app.use(getProxyHandler(proxy, proxypath || []))
+  app.use(getProxyHandler(proxy, proxypath || []));
 
   return app.listen(port, hostname, () => {
-    console.log(`Server is running at http://${hostname}:${port}\n`);
-    console.log(resolver.info());
+    const addresses: string[] = [];
+
+    if (hostname === '0.0.0.0') {
+      Object.values(os.networkInterfaces()).forEach((infos) => {
+        infos.forEach((info) => {
+          if (info.family === 'IPv4') {
+            addresses.push(info.address);
+          }
+        });
+      });
+    } else {
+      addresses.push(hostname);
+    }
+    console.log('listening at:');
+    for (const addr of addresses) {
+      console.log(`    http://${addr}:${port}`);
+    }
+    console.log('\n', resolver.info());
   });
 }
