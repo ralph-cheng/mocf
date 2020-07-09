@@ -1,3 +1,6 @@
+[![npm](https://img.shields.io/npm/v/mocf.svg?style=flat-square)](https://www.npmjs.com/package/mocf)
+[![npm downloads](https://img.shields.io/npm/dm/mocf?color=blue&label=npm%20downloads&style=flat-square)](https://www.npmjs.com/package/mocf)
+
 # Mock API Server using Text Files
 
 A straight forward command line mock api server.
