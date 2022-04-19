@@ -58,3 +58,6 @@ https://not-so-bad-hotel.com/api/v1/_data.txt
 # Almost forgot to mention, all lines are trimmed,
   # so leading/trailing whitespaces are not included in response, unless it's from a file
     file:data.txt
+
+/api/random-number-list
+file:random-number-list.js

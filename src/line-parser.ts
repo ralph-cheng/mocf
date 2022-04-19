@@ -38,10 +38,25 @@ function respondFile(line: string, filename: string) {
   try {
     if (!Fs.lstatSync(resolvedFilename).isFile()) {
       return null;
-    } else {
-      const content = Fs.readFileSync(resolvedFilename).toString();
-      return respondContent([content]);
     }
+
+    const ext = Path.extname(responseFilename);
+    let content = '';
+    if (ext === '.js') {
+      try {
+        content = require(resolvedFilename);
+        delete require.cache[resolvedFilename];
+        if (typeof content === 'object') {
+          content = JSON.stringify(content);
+        }
+      } catch (e) {
+        content = Fs.readFileSync(resolvedFilename).toString();
+      }
+    }
+    else {
+      content = Fs.readFileSync(resolvedFilename).toString();
+    }
+    return respondContent([content]);
   } catch (e) {
     return null;
   }
